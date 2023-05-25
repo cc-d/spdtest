@@ -124,7 +124,7 @@
 
     function updateUI(totalBytes, totalBytesExpected, peakSpeed, averageSpeed) {
       document.getElementById('averageSpeed').textContent = 'Average speed: ' + formatSpeed(averageSpeed);
-      document.getElementById('peakSpeed').textContent = 'Peak speed: ' + formatSpeed(peakSpeed * 1000);
+      document.getElementById('peakSpeed').textContent = 'Peak speed: ' + formatSpeed(peakSpeed);
       document.getElementById('totalProgress').textContent = 'Total progress: ' + ((totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
       document.getElementById('remainingProgress').textContent = 'Remaining progress: ' + ((1 - totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
     }
