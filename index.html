@@ -83,12 +83,11 @@
           'elapsed :' + elapsed, 'instantSpeed: ' + instantSpeed, 'peakSpeed: ' + peakSpeed,
           'totalElapsedTime: ' + totalElapsedTime)
 
-        // Update the UI
-        updateUI(totalBytes, contentLength, peakSpeed, totalElapsedTime / totalChunks);
-      }
+        const averageSpeed = formatSpeed(totalBytes / totalElapsedTime);
 
-      const averageSpeed = formatSpeed(totalBytes / totalElapsedTime);
-      document.getElementById('averageSpeed').textContent = 'Average download speed: ' + averageSpeed
+        // Update the UI
+        updateUI(totalBytes, contentLength, peakSpeed, averageSpeed);
+      }
     }
 
     async function uploadFile() {
