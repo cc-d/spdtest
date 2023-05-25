@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Speed Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #2980b9;
+    }
+
+    .result {
+      margin-top: 20px;
+    }
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h1>Speed Test</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" id="fileInput">
+    <button type="button" class="btn" onclick="uploadFile()">Upload Speed Test</button>
+  </form>
+
+  <button type="button" class="btn" onclick="downloadFile()">Download Speed Test</button>
+
+  <div class="result">
+    <p id="resultText"></p>
+  </div>
+
+  <script>
+    function downloadFile() {
+      var start = Date.now();
+      fetch('/download', {
+        method: 'GET'
+      })
+      .then(response => response.blob())
+      .then(blob => {
+        var end = Date.now();
+        var timeTaken = (end - start) / 1000; // time in seconds
+        var fileSizeInMB = blob.size / (1024 * 1024);
+        var speedMbps = fileSizeInMB / timeTaken;
+        document.getElementById('resultText').textContent = 'Download speed: ' + speedMbps.toFixed(2) + ' MBps';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+
+    function uploadFile() {
+      var fileInput = document.getElementById('fileInput');
+      var file = fileInput.files[0];
+      var formData = new FormData();
+      formData.append('file', file);
+      var start = Date.now();
+
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        var end = Date.now();
+        var timeTaken = (end - start) / 1000; // time in seconds
+        var fileSizeInMB = file.size / (1024 * 1024);
+        var speedMbps = fileSizeInMB / timeTaken;
+        document.getElementById('resultText').textContent = 'Upload speed: ' + speedMbps.toFixed(2) + ' MBps';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+  </script>
+</body>
+</html>
