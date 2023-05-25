@@ -67,15 +67,21 @@
 
       // Process data as it arrives
       while (true) {
-        let { done, value } = await reader.read();
+        const { done, value } = await reader.read();
+        console.log(done, value)
         if (done) break;
 
         totalChunks++;
         totalBytes += value.length;
-        let elapsed = Date.now() - start;
-        let instantSpeed = value.length / elapsed;
+        const elapsed = (Date.now() - start) / 1000;
+        const instantSpeed = value.length / elapsed;
         peakSpeed = Math.max(peakSpeed, instantSpeed);
-        totalElapsedTime += elapsed;
+        totalElapsedTime += (elapsed - totalElapsedTime);
+
+        console.log(
+          'start: ' + start, 'totalChunks: ' + totalChunks, 'totalBytes: ' + totalBytes,
+          'elapsed :' + elapsed, 'instantSpeed: ' + instantSpeed, 'peakSpeed: ' + peakSpeed,
+          'totalElapsedTime: ' + totalElapsedTime)
 
         // Update the UI
         updateUI(totalBytes, contentLength, peakSpeed, totalElapsedTime / totalChunks);
