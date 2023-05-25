@@ -46,51 +46,84 @@
   <button type="button" class="btn" onclick="downloadFile()">Download Speed Test</button>
 
   <div class="result">
-    <p id="resultText"></p>
+    <p id="averageSpeed"></p>
+    <p id="peakSpeed"></p>
+    <p id="totalProgress"></p>
+    <p id="remainingProgress"></p>
   </div>
 
   <script>
-    function downloadFile() {
-      var start = Date.now();
-      fetch('/download', {
-        method: 'GET'
-      })
-      .then(response => response.blob())
-      .then(blob => {
-        var end = Date.now();
-        var timeTaken = (end - start) / 1000; // time in seconds
-        var fileSizeInMB = blob.size / (1024 * 1024);
-        var speedMbps = fileSizeInMB / timeTaken;
-        document.getElementById('resultText').textContent = 'Download speed: ' + speedMbps.toFixed(2) + ' MBps';
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+    // Define global variables
+    let peakSpeed = 0;
+    let totalBytes = 0;
+    let totalChunks = 0;
+    let totalElapsedTime = 0;
+
+    async function downloadFile() {
+      const start = Date.now();
+      const response = await fetch('/download', { method: 'GET' });
+      const reader = response.body.getReader();
+      const contentLength = + response.headers.get('Content-Length');
+
+      // Process data as it arrives
+      while (true) {
+        let { done, value } = await reader.read();
+        if (done) break;
+
+        totalChunks++;
+        totalBytes += value.length;
+        let elapsed = Date.now() - start;
+        let instantSpeed = value.length / elapsed;
+        peakSpeed = Math.max(peakSpeed, instantSpeed);
+        totalElapsedTime += elapsed;
+
+        // Update the UI
+        updateUI(totalBytes, contentLength, peakSpeed, totalElapsedTime / totalChunks);
+      }
+
+      const averageSpeed = formatSpeed(totalBytes / totalElapsedTime);
+      document.getElementById('averageSpeed').textContent = 'Average download speed: ' + averageSpeed
     }
 
-    function uploadFile() {
+    async function uploadFile() {
       var fileInput = document.getElementById('fileInput');
       var file = fileInput.files[0];
       var formData = new FormData();
       formData.append('file', file);
-      var start = Date.now();
 
-      fetch('/upload', {
+      const response = await fetch('/upload', {
         method: 'POST',
         body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        var end = Date.now();
-        var timeTaken = (end - start) / 1000; // time in seconds
-        var fileSizeInMB = file.size / (1024 * 1024);
-        var speedMbps = fileSizeInMB / timeTaken;
-        document.getElementById('resultText').textContent = 'Upload speed: ' + speedMbps.toFixed(2) + ' MBps';
-      })
-      .catch(error => {
-        console.error('Error:', error);
       });
+
+      const result = await response.json();
+      document.getElementById('remainingProgress').textContent = result.message;
     }
-  </script>
-</body>
+
+    function formatSpeed(speedInBps) {
+      let speed = speedInBps;
+      let unit = 'Bps';
+
+      if (speed > 1000) {
+        speed = speed / 1024;
+        unit = 'KBps';
+      }
+      if (speed > 1000) {
+        speed = speed / 1024;
+        unit = 'MBps';
+      }
+
+      return speed.toFixed(2) + ' ' + unit;
+    }
+
+    function updateUI(totalBytes, totalBytesExpected, peakSpeed, averageSpeed) {
+      document.getElementById('averageSpeed').textContent = 'Average speed: ' + formatSpeed(averageSpeed);
+      document.getElementById('peakSpeed').textContent = 'Peak speed: ' + formatSpeed(peakSpeed * 1000);
+      document.getElementById('totalProgress').textContent = 'Total progress: ' + ((totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
+      document.getElementById('remainingProgress').textContent = 'Remaining progress: ' + ((1 - totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
+    }
+
+    </script>
+  </body>
 </html>
+
