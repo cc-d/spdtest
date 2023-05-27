@@ -86,7 +86,7 @@
         const averageSpeed = formatSpeed(totalBytes / totalElapsedTime);
 
         // Update the UI
-        updateUI(totalBytes, contentLength, peakSpeed, averageSpeed);
+        updateUI(totalBytes, contentLength, peakSpeed, totalBytes / totalElapsedTime);
       }
     }
 
