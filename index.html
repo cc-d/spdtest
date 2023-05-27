@@ -73,20 +73,26 @@
 
         totalChunks++;
         totalBytes += value.length;
+
         const elapsed = (Date.now() - start) / 1000;
-        const instantSpeed = value.length / elapsed;
-        peakSpeed = Math.max(peakSpeed, instantSpeed);
+        const timeDiff = (elapsed - totalElapsedTime)
+        const instantSpeed = value.length / timeDiff
+
+        // avoid infinity issue when speeds are too fast
+        if (peakSpeed < instantSpeed && instantSpeed != Infinity) {
+          peakSpeed = instantSpeed;
+        }
+
         totalElapsedTime += (elapsed - totalElapsedTime);
+        const averageSpeed = totalBytes / totalElapsedTime;
 
         console.log(
           'start: ' + start, 'totalChunks: ' + totalChunks, 'totalBytes: ' + totalBytes,
           'elapsed :' + elapsed, 'instantSpeed: ' + instantSpeed, 'peakSpeed: ' + peakSpeed,
-          'totalElapsedTime: ' + totalElapsedTime)
-
-        const averageSpeed = formatSpeed(totalBytes / totalElapsedTime);
+          'totalElapsedTime: ' + totalElapsedTime, 'averageSpeed: ' + averageSpeed, 'bytes: ' + value.length)
 
         // Update the UI
-        updateUI(totalBytes, contentLength, peakSpeed, totalBytes / totalElapsedTime);
+        updateUI(totalBytes, contentLength, peakSpeed, averageSpeed);
       }
     }
 
