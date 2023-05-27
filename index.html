@@ -47,14 +47,14 @@
 
   <div class="result">
     <p id="averageSpeed"></p>
-    <p id="peakSpeed"></p>
+    <p id="peakAverage"></p>
     <p id="totalProgress"></p>
     <p id="remainingProgress"></p>
   </div>
 
   <script>
     // Define global variables
-    let peakSpeed = 0;
+    let peakAverage = 0;
     let totalBytes = 0;
     let totalChunks = 0;
     let totalElapsedTime = 0;
@@ -76,23 +76,21 @@
 
         const elapsed = (Date.now() - start) / 1000;
         const timeDiff = (elapsed - totalElapsedTime)
-        const instantSpeed = value.length / timeDiff
-
-        // avoid infinity issue when speeds are too fast
-        if (peakSpeed < instantSpeed && instantSpeed != Infinity) {
-          peakSpeed = instantSpeed;
-        }
 
         totalElapsedTime += (elapsed - totalElapsedTime);
         const averageSpeed = totalBytes / totalElapsedTime;
 
+        if (averageSpeed > peakAverage) {
+          peakAverage = averageSpeed;
+        }
+
         console.log(
           'start: ' + start, 'totalChunks: ' + totalChunks, 'totalBytes: ' + totalBytes,
-          'elapsed :' + elapsed, 'instantSpeed: ' + instantSpeed, 'peakSpeed: ' + peakSpeed,
-          'totalElapsedTime: ' + totalElapsedTime, 'averageSpeed: ' + averageSpeed, 'bytes: ' + value.length)
+          'elapsed :' + elapsed, 'totalElapsedTime: ' + totalElapsedTime,
+          'averageSpeed: ' + averageSpeed, 'bytes: ' + value.length, 'peakAverage: ' + peakAverage)
 
         // Update the UI
-        updateUI(totalBytes, contentLength, peakSpeed, averageSpeed);
+        updateUI(totalBytes, contentLength, peakAverage, averageSpeed);
       }
     }
 
@@ -127,9 +125,9 @@
       return speed.toFixed(2) + ' ' + unit;
     }
 
-    function updateUI(totalBytes, totalBytesExpected, peakSpeed, averageSpeed) {
+    function updateUI(totalBytes, totalBytesExpected, peakAverage, averageSpeed) {
       document.getElementById('averageSpeed').textContent = 'Average speed: ' + formatSpeed(averageSpeed);
-      document.getElementById('peakSpeed').textContent = 'Peak speed: ' + formatSpeed(peakSpeed);
+      document.getElementById('peakAverage').textContent = 'Peak average speed: ' + formatSpeed(peakAverage);
       document.getElementById('totalProgress').textContent = 'Total progress: ' + ((totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
       document.getElementById('remainingProgress').textContent = 'Remaining progress: ' + ((1 - totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
     }
