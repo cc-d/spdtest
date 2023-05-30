@@ -11,12 +11,13 @@ def home():
 
 @app.route('/download', methods=['GET'])
 def download():
-    """Provide the 50MB file for download."""
-    return send_file('50mb.data', as_attachment=True)
+    """Provide the file for download based on size."""
+    size = request.args.get('size', default="50")  # Get file size from query params, default is 50
+    return send_file(f'{size}mb.data', as_attachment=True)
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    """Accept the 20MB file for upload."""
+    """Accept the file for upload."""
     file = request.files.get('file')
     if file:
         return {'message': 'File received'}, 200

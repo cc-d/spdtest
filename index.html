@@ -38,12 +38,14 @@
 <body>
   <h1>Speed Test</h1>
 
-  <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" name="file" id="fileInput">
-    <button type="button" class="btn" onclick="uploadFile()">Upload Speed Test</button>
-  </form>
 
-  <button type="button" class="btn" onclick="downloadFile()">Download Speed Test</button>
+  <!-- Add dropdown for file size -->
+  <select id="fileSize" class="btn">
+    <option value="20">20MB</option>
+    <option value="50">50MB</option>
+    <!-- Add more options here -->
+  </select>
+  <button type="button" class="btn" onclick="downloadAndUploadFile()">Start Speedtest</button>
 
   <div class="result">
     <p id="averageSpeed"></p>
@@ -53,61 +55,67 @@
   </div>
 
   <script>
-    // Define global variables
-    let peakAverage = 0;
-    let totalBytes = 0;
-    let totalChunks = 0;
-    let totalElapsedTime = 0;
 
-    async function downloadFile() {
-      const start = Date.now();
-      const response = await fetch('/download', { method: 'GET' });
-      const reader = response.body.getReader();
-      const contentLength = + response.headers.get('Content-Length');
+  // Define global variables
+  let peakAverage = 0;
+  let totalBytes = 0;
+  let totalChunks = 0;
+  let totalElapsedTime = 0;
 
-      // Process data as it arrives
-      while (true) {
-        const { done, value } = await reader.read();
-        console.log(done, value)
-        if (done) break;
+  async function downloadAndUploadFile() {
+    // Reset global variables
+    peakAverage = 0;
+    totalBytes = 0;
+    totalChunks = 0;
+    totalElapsedTime = 0;
 
-        totalChunks++;
-        totalBytes += value.length;
+    // Get selected file size
+    let size = document.getElementById('fileSize').value;
 
-        const elapsed = (Date.now() - start) / 1000;
-        const timeDiff = (elapsed - totalElapsedTime)
+    const start = Date.now();
+    const response = await fetch('/download?size=' + size, { method: 'GET' });
+    const uploadResponse = response.clone();  // Clone the response for later upload
+    const reader = response.body.getReader();
+    const contentLength = + response.headers.get('Content-Length');
 
-        totalElapsedTime += (elapsed - totalElapsedTime);
-        const averageSpeed = totalBytes / totalElapsedTime;
+    // Process data as it arrives
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-        if (averageSpeed > peakAverage) {
-          peakAverage = averageSpeed;
-        }
+      totalChunks++;
+      totalBytes += value.length;
 
-        console.log(
-          'start: ' + start, 'totalChunks: ' + totalChunks, 'totalBytes: ' + totalBytes,
-          'elapsed :' + elapsed, 'totalElapsedTime: ' + totalElapsedTime,
-          'averageSpeed: ' + averageSpeed, 'bytes: ' + value.length, 'peakAverage: ' + peakAverage)
+      const elapsed = (Date.now() - start) / 1000;
+      const timeDiff = (elapsed - totalElapsedTime)
 
-        // Update the UI
-        updateUI(totalBytes, contentLength, peakAverage, averageSpeed);
+      totalElapsedTime += timeDiff;
+      const averageSpeed = totalBytes / totalElapsedTime;
+
+      if (averageSpeed > peakAverage) {
+        peakAverage = averageSpeed;
       }
+
+      // Update the UI
+      updateUI(totalBytes, contentLength, peakAverage, averageSpeed);
     }
 
-    async function uploadFile() {
-      var fileInput = document.getElementById('fileInput');
-      var file = fileInput.files[0];
-      var formData = new FormData();
-      formData.append('file', file);
+    // After the file is downloaded, upload the file
+    await uploadFile(new Blob([await uploadResponse.arrayBuffer()]));
+  }
 
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
+  async function uploadFile(file) {
+    var formData = new FormData();
+    formData.append('file', file);
 
-      const result = await response.json();
-      document.getElementById('remainingProgress').textContent = result.message;
-    }
+    const uploadResponse = await fetch('/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await uploadResponse.json();
+    document.getElementById('remainingProgress').textContent = result.message;
+  }
 
     function formatSpeed(speedInBps) {
       let speed = speedInBps;
@@ -131,8 +139,8 @@
       document.getElementById('totalProgress').textContent = 'Total progress: ' + ((totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
       document.getElementById('remainingProgress').textContent = 'Remaining progress: ' + ((1 - totalBytes / totalBytesExpected) * 100).toFixed(2) + '%';
     }
+  </script>
 
-    </script>
   </body>
 </html>
 
